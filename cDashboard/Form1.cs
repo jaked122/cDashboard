@@ -54,19 +54,31 @@ namespace cDashboard
         private globalKeyboardHook KeyHook = new globalKeyboardHook(); //KeyHook is the global key hook
 
         /// <summary>
-        /// Signifies if the LCtrl key is down
+        /// Signifies if key1 (for fading) is down
         /// </summary>
-        private bool LCtrlIsDown = false;
+        private bool Key1IsDown = false;
+
+        /// <summary>
+        /// Signifies if key2 (for fading) is down
+        /// </summary>
+        private bool Key2IsDown = false;
+
+        /// <summary>
+        /// represents the first key of the fade shortcut
+        /// defaults to LCtrl
+        /// </summary>
+        private Keys Key1 = Keys.LControlKey;
+
+        /// <summary>
+        /// represents the second key of the fade shortcut
+        /// defaults to Oemtilde
+        /// </summary>
+        private Keys Key2 = Keys.Oemtilde;
 
         /// <summary>
         /// signifies if a wallpaper image is being used
         /// </summary>
         private bool UseWallpaperImage = false;
-
-        /// <summary>
-        /// Signifies if the tilde key is down
-        /// </summary>
-        private bool TildeIsDown = false;
 
         /// <summary>
         /// opacity level of the dashboard
@@ -107,7 +119,7 @@ namespace cDashboard
 
         #endregion Constructor
 
-        #region plugins
+        #region Plugins
 
         /// <summary>
         /// This is used to identify which plugin should be called when a menu button is pressed.
@@ -186,7 +198,7 @@ namespace cDashboard
             Controls.Add(nf);
         }
 
-        #endregion plugins
+        #endregion Plugins
 
         #region Form Loading, Initial Setup
 
@@ -267,9 +279,6 @@ namespace cDashboard
 
             this.notifyIcon1.Visible = true;
 
-            variable_setup(); //setup variables1
-            // this.Focus(); //This makes it so the text is not edited by pressing keys after startup (while invisible)
-
             //create appdata directory
             if (!System.IO.Directory.Exists(SETTINGS_LOCATION))
                 System.IO.Directory.CreateDirectory((SETTINGS_LOCATION));
@@ -286,6 +295,10 @@ namespace cDashboard
 
             //Read settings not pertaining to stickies
             otherSettings(ref settings_list);
+
+            //sets up the hooking for fades
+            //pass false to say don't unhook anything first
+            keyHookSetup(false);
 
             //start listening server
             new System.Threading.Thread(runServer).Start();
@@ -365,6 +378,18 @@ namespace cDashboard
                 //set backcolor of the Dash from settings
                 if (currentline[0] == "cDash")
                 {
+                    //set Key1
+                    if (currentline[1] == "Key1")
+                    {
+                        Key1 = (Keys)Convert.ToInt16(currentline[2]);
+                    }
+
+                    //set Key2
+                    if (currentline[1] == "Key2")
+                    {
+                        Key2 = (Keys)Convert.ToInt16(currentline[2]);
+                    }
+
                     //updates ui to signify auto checking
                     if (currentline[1] == "AutoUpdateCheck")
                     {
@@ -758,11 +783,20 @@ namespace cDashboard
         /// <summary>
         /// Sets variables for proper key hooking and begins the hook
         /// </summary>
-        private void variable_setup()
+        /// <param name="unhook_first">should we unhook previous before hooking</param>
+        private void keyHookSetup(bool unhook_first)
         {
-            //add tilde and LeftCtrl to the list of hooked keys
-            KeyHook.HookedKeys.Add(Keys.Oemtilde);
-            KeyHook.HookedKeys.Add(Keys.LControlKey);
+            if (unhook_first)
+            {
+                KeyHook.HookedKeys.Clear();
+                KeyHook.unhook();
+                Key1 = (Keys)Convert.ToInt16(getSpecificSetting(new string[] { "cDash", "Key1" })[0]);
+                Key2 = (Keys)Convert.ToInt16(getSpecificSetting(new string[] { "cDash", "Key2" })[0]);
+            }
+
+            //add Key1 and Key2 to the list of hooked keys
+            KeyHook.HookedKeys.Add(Key2);
+            KeyHook.HookedKeys.Add(Key1);
             //begin hook
             KeyHook.hook();
             //Setup Key Event Handlers
@@ -865,12 +899,10 @@ namespace cDashboard
         /// </summary>
         private void moveToPrimaryMonitor()
         {
-            this.WindowState = FormWindowState.Normal;
-
             //set Primary Monitor for the dash
             string[] tmp = { "cDash", "PrimaryMonitor" };
             List<string> list_primarymonitorline = getSpecificSetting(new List<string>(tmp));
-            if (list_primarymonitorline.Count == 1)
+            if (list_primarymonitorline.Count == 1 && list_primarymonitorline[0] != "Span")
             {
                 //go through monitors to find the one that is = to the setting
                 foreach (Screen s in Screen.AllScreens)
@@ -883,9 +915,35 @@ namespace cDashboard
                         this.Top = s.Bounds.Top;
                     }
                 }
-            }
 
-            this.WindowState = FormWindowState.Maximized;
+                this.WindowState = FormWindowState.Maximized;
+            }
+            else if (list_primarymonitorline.Count > 0 && list_primarymonitorline[0] == "Span")
+            {
+                this.WindowState = FormWindowState.Normal;
+                int tmp_height = int.MaxValue;
+                int tmp_width = 0;
+                foreach (Screen s in Screen.AllScreens)
+                {
+                    //take smallest height
+                    if (s.Bounds.Height > tmp_height)
+                        tmp_height = s.Bounds.Height;
+
+                    tmp_width += s.Bounds.Width;
+
+                }
+
+                this.Size = new System.Drawing.Size(tmp_width, tmp_height);
+                this.Location = new Point(0, 0);
+                
+                //call this manually because within the size change event it is ignored if FormWindowState is normal
+                //this was done to prevent it from resizing while calculating the span size
+                makeSureCFormsAreOnScreen();
+            }
+            else
+            {
+                this.WindowState = FormWindowState.Maximized;
+            }
         }
 
         /// <summary>
@@ -929,7 +987,11 @@ namespace cDashboard
         /// <param name="e"></param>
         private void cDashboard_SizeChanged(object sender, EventArgs e)
         {
-            makeSureCFormsAreOnScreen();
+            //don't do this if in normal state
+            if (this.WindowState != FormWindowState.Normal)
+            {
+                makeSureCFormsAreOnScreen();
+            }
         }
 
         /// <summary>
@@ -978,6 +1040,16 @@ namespace cDashboard
                 label_monitor_name.Text = "Click the monitor you would like to use for cDashBoard\n" + s.ToString();
                 label_monitor_name.Location = new Point((form_tmp.Width / 2) - label_monitor_name.Width / 2, (form_tmp.Height / 2) - label_monitor_name.Height / 2);
 
+                //add span button
+                Button button_span = new Button();
+                form_tmp.Controls.Add(button_span);
+                button_span.Show();
+                button_span.AutoSize = true;
+                button_span.FlatStyle = FlatStyle.Flat;
+                button_span.Text = "Span All Monitors";
+                button_span.Location = new Point(5, 5);
+                button_span.Click += new EventHandler(Multi_Monitor_button_span_Click);
+
                 if (isFreshInstall == false)
                 {
                     //add a cancel button to each form
@@ -987,10 +1059,26 @@ namespace cDashboard
                     button_cancel.AutoSize = true;
                     button_cancel.FlatStyle = FlatStyle.Flat;
                     button_cancel.Text = "Cancel";
-                    button_cancel.Location = new Point(0, 0);
+                    button_cancel.Location = new Point(button_span.Location.X + button_span.Size.Width + 5, 5);
                     button_cancel.Click += new EventHandler(Mult_Monitor_button_cancel_Click);
                 }
             }
+        }
+
+        /// <summary>
+        /// sets the monitor to span in settings
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Multi_Monitor_button_span_Click(object sender, EventArgs e)
+        {
+            replaceSetting(new string[] { "cDash", "PrimaryMonitor" }, new string[] { "cDash", "PrimaryMonitor", "Span" });
+
+            //close overlays
+            closeMultiMontiorOverlays();
+
+            //move the Dash to the new monitor
+            moveToPrimaryMonitor();
         }
 
         /// <summary>
@@ -1000,16 +1088,14 @@ namespace cDashboard
         /// <param name="e"></param>
         private void Monitor_Overlay_Click(object sender, EventArgs e)
         {
-            List<string> list_find = new List<string>(new string[] { "cDash", "PrimaryMonitor" });
-            List<string> list_replace = new List<string>(new string[] { "cDash", "PrimaryMonitor", Screen.FromControl(((Form)sender)).ToString() });
+            //replace setting
+            replaceSetting(new string[] { "cDash", "PrimaryMonitor" }, new string[] { "cDash", "PrimaryMonitor", Screen.FromControl(((Form)sender)).ToString() });
 
             //close overlays
             closeMultiMontiorOverlays();
 
-            //replace setting
-            replaceSetting(list_find, list_replace);
-
             //move the Dash to the new monitor
+            this.WindowState = FormWindowState.Normal;
             moveToPrimaryMonitor();
         }
 
@@ -1052,22 +1138,22 @@ namespace cDashboard
         /// <param name="e">Arguements for the event</param>
         private void KeyHook_KeyDown(object sender, KeyEventArgs e)
         {
-            //Check if the hooked key is the LCtrl
-            if (e.KeyCode == Keys.LControlKey)
+            //Check if the hooked key is Key1
+            if (e.KeyCode == Key1)
             {
                 //Set the bool properly
-                LCtrlIsDown = true;
+                Key1IsDown = true;
             }
 
-            //Check if the hooked key is the tilde key
-            if (e.KeyCode == Keys.Oemtilde)
+            //Check if the hooked key is Key2
+            if (e.KeyCode == Key2)
             {
                 //Set the bool properly
-                TildeIsDown = true;
+                Key2IsDown = true;
             }
 
             //if both hooked keys are down, and we are ready to fadein, fade in the dash
-            if (TildeIsDown && LCtrlIsDown && cD_tstate == timerstate.fadein && CompletedForm_Load == true)
+            if (Key2IsDown && Key1IsDown && cD_tstate == timerstate.fadein && CompletedForm_Load == true)
             {
                 //kill attempts to call a fade_in during a fade_in
                 if (this.Opacity != 0)
@@ -1077,19 +1163,19 @@ namespace cDashboard
 
                 //reset which keys are down
                 //don't reset LCtrl (for convinence)
-                TildeIsDown = false;
+                Key2IsDown = false;
                 e.Handled = true;
                 return;
             }
 
             //if both hooked keys are down, and we are ready to fadeout, fadeout in the dash
-            if (TildeIsDown && LCtrlIsDown && cD_tstate == timerstate.indash)
+            if (Key2IsDown && Key1IsDown && cD_tstate == timerstate.indash)
             {
                 fade_out();
 
                 //reset which keys are down
                 //don't reset LCtrl (for convinence)
-                TildeIsDown = false;
+                Key2IsDown = false;
                 e.Handled = true;
                 return;
             }
@@ -1104,18 +1190,18 @@ namespace cDashboard
         /// <param name="e">Arguements for the event</param>
         private void KeyHook_KeyUp(object sender, KeyEventArgs e)
         {
-            //Check if the hooked key is the LCtrl
-            if (e.KeyCode == Keys.LControlKey)
+            //Check if the hooked key is Key1
+            if (e.KeyCode == Key1)
             {
                 //Set the bool properly
-                LCtrlIsDown = false;
+                Key1IsDown = false;
             }
 
-            //Check if the hooked key is the tilde key
-            if (e.KeyCode == Keys.Oemtilde)
+            //Check if the hooked key is Key2
+            if (e.KeyCode == Key2)
             {
                 //Set the bool properly
-                TildeIsDown = false;
+                Key2IsDown = false;
             }
         }
 
@@ -1309,10 +1395,10 @@ namespace cDashboard
         private void uitimer_Tick(object sender, EventArgs e)
         {
             updateCWeather();
+            checkForCReminders();
 
             if (cD_tstate == timerstate.indash)
             {
-                checkForCReminders();
                 updateTimeDate();
             }
         }
@@ -1640,7 +1726,7 @@ namespace cDashboard
         /// </summary>
         /// <param name="release_version"></param>
         /// <returns></returns>
-        private string formatReleaseString(ref string release_version)
+        private string formatReleaseString(string release_version)
         {
             //add extra .0 onto the end of the version number to lengthen
             while (release_version.Count(f => f == '.') < 3)
@@ -1682,7 +1768,7 @@ namespace cDashboard
                 string release_version = ((string)dict[0]["tag_name"]).Substring(1);
 
                 //add extra .0 onto the end of the version number to lengthen
-                release_version = formatReleaseString(ref release_version);
+                release_version = formatReleaseString(release_version);
 
                 if (release_version != ProductVersion)
                 {
@@ -1826,13 +1912,13 @@ namespace cDashboard
             }
             catch
             {
-                MessageBox.Show("Display Time needs to be an integer greater than 1 and less than 11");
+                MessageBox.Show("Display Time needs to be an integer greater than 1 and less than 121");
                 return;
             }
 
-            if (!(new_display_time >= 2 && new_display_time <= 10))
+            if (!(new_display_time >= 2 && new_display_time <= 120))
             {
-                MessageBox.Show("Display Time needs to be an integer greater than 1 and less than 11");
+                MessageBox.Show("Display Time needs to be an integer greater than 1 and less than 121");
                 return;
             }
 
@@ -2742,6 +2828,26 @@ namespace cDashboard
         #region Extra Events
 
         /// <summary>
+        /// opens setup for fade keyboard shortcut
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void fadeShortcutToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            cKBSetup cKBS = new cKBSetup(Key1, Key2);
+
+            //automatically rehook after this dialog closes
+            new System.Threading.Thread(() =>
+            {
+                cKBS.ShowDialog();
+                keyHookSetup(true);
+            }
+                ).Start();
+
+            fade_out();
+        }
+
+        /// <summary>
         /// called if a control is removed
         /// ex: if the x button is clicked on a child from, handle deleting the cForm
         /// </summary>
@@ -2833,8 +2939,11 @@ namespace cDashboard
             menuStrip1.Focus();
         }
 
-        #endregion Extra Events
-
+        /// <summary>
+        /// timer for saving plugin data
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void PluginSaveTimer_Tick(object sender, EventArgs e)
         {
             foreach (var i in pluginTypes.Values)
@@ -2843,5 +2952,7 @@ namespace cDashboard
                     i.SavePlugin(SETTINGS_LOCATION);
             }
         }
+
+        #endregion Extra Events
     }
 }

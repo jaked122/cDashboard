@@ -4,7 +4,7 @@
 
     partial class cDashboard
     {
-        
+
         /// <summary>
         /// Required designer variable.
         /// </summary>
@@ -66,11 +66,11 @@
             this.newCRViewerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.automaticallyCheckForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.hideToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pluginsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.editToolStripMenuItem = new cDashboard.cToolStripMenuItem();
-
             this.preferencesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.cDashToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.defaultMonitorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -99,9 +99,9 @@
             this.cNotificationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.displayTimeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolstrip_displaytime = new System.Windows.Forms.ToolStripTextBox();
+            this.fadeShortcutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fadetimer = new System.Windows.Forms.Timer(this.components);
             this.PluginSaveTimer = new System.Windows.Forms.Timer(this.components);
-            this.automaticallyCheckForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.notifyicon_menustrip.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -378,6 +378,13 @@
             this.checkForUpdatesToolStripMenuItem.Text = "Check for Updates...";
             this.checkForUpdatesToolStripMenuItem.Click += new System.EventHandler(this.checkForUpdatesToolStripMenuItem_Click);
             // 
+            // automaticallyCheckForUpdatesToolStripMenuItem
+            // 
+            this.automaticallyCheckForUpdatesToolStripMenuItem.Name = "automaticallyCheckForUpdatesToolStripMenuItem";
+            this.automaticallyCheckForUpdatesToolStripMenuItem.Size = new System.Drawing.Size(276, 22);
+            this.automaticallyCheckForUpdatesToolStripMenuItem.Text = "Automatically Check for Updates ";
+            this.automaticallyCheckForUpdatesToolStripMenuItem.Click += new System.EventHandler(this.automaticallyCheckForUpdatesToolStripMenuItem_Click);
+            // 
             // hideToolStripMenuItem
             // 
             this.hideToolStripMenuItem.Name = "hideToolStripMenuItem";
@@ -415,7 +422,7 @@
             this.cDashDataToolStripMenuItem,
             this.cNotificationToolStripMenuItem});
             this.preferencesToolStripMenuItem.Name = "preferencesToolStripMenuItem";
-            this.preferencesToolStripMenuItem.Size = new System.Drawing.Size(145, 22);
+            this.preferencesToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.preferencesToolStripMenuItem.Text = "Preferences";
             // 
             // cDashToolStripMenuItem
@@ -425,6 +432,7 @@
             this.cDashBackgroundToolStripMenuItem,
             this.setOpacityToolStripMenuItem,
             this.setFadeTimeToolStripMenuItem,
+            this.fadeShortcutToolStripMenuItem,
             this.setDateTimeColorToolStripMenuItem,
             this.boardlessModeToolStripMenuItem});
             this.cDashToolStripMenuItem.Name = "cDashToolStripMenuItem";
@@ -605,6 +613,13 @@
             this.exportToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
             this.exportToolStripMenuItem.Text = "Export";
             this.exportToolStripMenuItem.Click += new System.EventHandler(this.exportToolStripMenuItem_Click);
+            //
+            // fadeShortcutToolStripMenuItem
+            // 
+            this.fadeShortcutToolStripMenuItem.Name = "fadeShortcutToolStripMenuItem";
+            this.fadeShortcutToolStripMenuItem.Size = new System.Drawing.Size(295, 36);
+            this.fadeShortcutToolStripMenuItem.Text = "Fade Shortcut...";
+            this.fadeShortcutToolStripMenuItem.Click += new System.EventHandler(this.fadeShortcutToolStripMenuItem_Click); 
             // 
             // importToolStripMenuItem
             // 
@@ -647,12 +662,6 @@
             this.PluginSaveTimer.Enabled = true;
             this.PluginSaveTimer.Interval = 1000;
             this.PluginSaveTimer.Tick += new System.EventHandler(this.PluginSaveTimer_Tick);
-           // automaticallyCheckForUpdatesToolStripMenuItem
-            // 
-            this.automaticallyCheckForUpdatesToolStripMenuItem.Name = "automaticallyCheckForUpdatesToolStripMenuItem";
-            this.automaticallyCheckForUpdatesToolStripMenuItem.Size = new System.Drawing.Size(276, 22);
-            this.automaticallyCheckForUpdatesToolStripMenuItem.Text = "Automatically Check for Updates ";
-            this.automaticallyCheckForUpdatesToolStripMenuItem.Click += new System.EventHandler(this.automaticallyCheckForUpdatesToolStripMenuItem_Click);
             // 
             // cDashboard
             // 
@@ -758,6 +767,7 @@
         private cDashboard.cToolStripMenuItem editToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem checkForUpdatesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem automaticallyCheckForUpdatesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem fadeShortcutToolStripMenuItem;
     }
 }
 
